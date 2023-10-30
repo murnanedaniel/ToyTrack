@@ -1,10 +1,10 @@
 Metadata-Version: 2.1
 Name: toytrack
-Version: 0.1.3
-Summary: Description of my package
-Home-page: https://github.com/yourusername/toytrack
+Version: 0.1.4
+Summary: A package for generating toy tracking data.
+Home-page: https://github.com/murnanedaniel/ToyTrack
 Author: Author Name
-Author-email: author@gmail.com
+Author-email: dtmurnane@lbl.gov
 Description-Content-Type: text/markdown
 
 # ToyTrack
@@ -27,14 +27,14 @@ from toytrack import ParticleGun, Detector, EventGenerator
 
 # Initialize a particle gun which samples uniformly from pt between 10 and 20 GeV, 
 # initial direction phi between -pi and pi, and creation vertex vx and vy between -0.1 and 0.1 cm
-particle_gun = ParticleGun(dimension=2, pt=(10, 20), pphi=(-np.pi, np.pi), vx=(-0.1, 0.1), vy=(-0.1, 0.1))
+particle_gun = ParticleGun(dimension=2, pt=(2, 20), pphi=(-np.pi, np.pi), vx=(-0.1, 0.1), vy=(-0.1, 0.1))
 
 # Initialize a detector
-detector = Detector(dimension=2).add_from_template('barrel', min_radius=10, max_radius=100, number_of_layers=10)
+detector = Detector(dimension=2).add_from_template('barrel', min_radius=0.5, max_radius=3, number_of_layers=10)
 
 # Initialize an event generator, which generates an event with a number of particles given by a normal
 # distribution, with mean 10 and standard deviation 5
-event = EventGenerator(particle_gun, detector, num_particles=(10, 5, 'normal')).generate_event()
+event = EventGenerator(particle_gun, detector, num_particles=(20, 5, 'normal')).generate_event()
 
 # Access the particles and hits as needed
 particles = event.particles

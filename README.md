@@ -30,6 +30,9 @@ event = EventGenerator(particle_gun, detector, num_particles=(20, 5, 'normal')).
 # Access the particles and hits as needed
 particles = event.particles
 hits = event.hits
+
+# Plot the event
+event.display()
 ```
 
 ![Example Event](docs/imgs/example_event.png)
