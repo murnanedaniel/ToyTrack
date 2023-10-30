@@ -1,6 +1,8 @@
 # ToyTrack
 
-ToyTrack is a Python library for generating toy tracking events for particle physics. It provides classes for particles, hits, detectors, and events, and allows for the generation of events with a specified number of particles.
+ToyTrack is a Python library for generating toy tracking events for particle physics. 
+
+**The goal**: To produce a "*good-enough*" event simulation, in as few lines as possible (currently 3 lines), as quickly as possible (currently 0.15 seconds for a 10,000-particle event).
 
 ## Installation
 
@@ -13,20 +15,28 @@ pip install toytrack
 ## Usage
 ```python
 from toytrack import ParticleGun, Detector, EventGenerator
-Initialize a particle gun
-particle_gun = ParticleGun(dimension=2, pt=(0.1, 1.0, 'uniform'), pphi=(0, 2np.pi, 'uniform'), vx=0, vy=0)
+
+# Initialize a particle gun which samples uniformly from pt between 10 and 20 GeV, 
+# initial direction phi between -pi and pi, and creation vertex vx and vy between -0.1 and 0.1 cm
+particle_gun = ParticleGun(dimension=2, pt=(10, 20), pphi=(-np.pi, np.pi), vx=(-0.1, 0.1), vy=(-0.1, 0.1))
 
 # Initialize a detector
-detector = Detector(dimension=2)
-detector.add_from_template('barrel', min_radius=10, max_radius=100, number_of_layers=10)
+detector = Detector(dimension=2).add_from_template('barrel', min_radius=10, max_radius=100, number_of_layers=10)
 
 # Initialize an event generator
-event_generator = EventGenerator(particle_gun, detector, num_particles=(1, 10, 'uniform'))
+event = EventGenerator(particle_gun, detector, num_particles=(10, 5, 'normal')).generate_event()
 
-# Generate an event
-event = event_generator.generate_event()
-
-# Access the particles and hits
+# Access the particles and hits as needed
 particles = event.particles
 hits = event.hits
-``````
+```
+
+![Example Event](docs/imgs/example_event.png)
+
+
+
+## Performance
+
+ToyTrack is designed to be fast. The following benchmarks were performed on a 64-core AMD EPYC 7763 (Milan) CPU. 
+
+![Scaling Study](docs/imgs/time_scaling.png)
