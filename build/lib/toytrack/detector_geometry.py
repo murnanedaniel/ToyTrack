@@ -122,57 +122,52 @@ class Detector:
         self.layers.extend(endcap_layers)
         
 
-    def generate_hits(self, particle: Particle) -> List[Hit]:
+    def generate_hits(self, particles: List[Particle]) -> pd.DataFrame:
         """
-        Generate a list of hits based on the given particle.
+        Generate a DataFrame of hits based on the given particles.
         """
         # Generate the hits
-        hits = self._generate_hits(particle)
+        hits_df = self._generate_hits(particles)
 
-        # Sort the hits by layer
-        hits = sorted(hits, key=lambda hit: hit.layer)
-
-        return hits
+        return hits_df
     
-    def _generate_hits(self, particle: Particle) -> List[Hit]:
+    def _generate_hits(self, particles: List[Particle]) -> pd.DataFrame:
         """
         Helper method to generate a list of hits based on the given particle.
         """
         # Calculate the intersection points of the particle trajectory with the detector
-        intersection_points = self._calculate_intersection_points(particle)
-
-        # Calculate the hits from the intersection points
-        hits = self._calculate_hits(intersection_points)
+        hits = self._calculate_intersection_points(particles)
 
         return hits
     
-    def _calculate_intersection_points(self, particle: Particle) -> List[Tuple[float, float, float]]:
+    def _calculate_intersection_points(self, particles: List[Particle]) -> pd.DataFrame:
         """
         Helper method to calculate the intersection points of the particle trajectory with the detector.
         """
         # Calculate the intersection points of the particle trajectory with the detector
         if self.dimension == 2:
-            intersection_points = self._calculate_intersection_points_2d(particle)
+            intersection_points = self._calculate_intersection_points_2d(particles)
         elif self.dimension == 3:
-            intersection_points = self._calculate_intersection_points_3d(particle)
+            intersection_points = self._calculate_intersection_points_3d(particles)
         else:
             raise ValueError("Dimension must be 2 or 3.")
 
         return intersection_points
     
-    def _calculate_intersection_points_2d(self, particle: Particle) -> List[Tuple[float, float, float]]:
+    def _calculate_intersection_points_2d(self, particles: List[Particle]) -> pd.DataFrame:
         """
         Helper method to calculate the intersection points of the particle trajectory with the detector in 2D.
         """
         # Calculate the intersection points of the particle trajectory with the detector
-        if self.shape == 'plane':
-            intersection_points = self._calculate_intersection_points_2d_plane(particle)
-        elif self.shape == 'cylinder':
-            intersection_points = self._calculate_intersection_points_2d_cylinder(particle)
-        else:
-            raise ValueError("Shape must be 'plane' or 'cylinder'.")
+        intersection_points = []
+        intersection_points.append(self._calculate_intersection_points_2d_cylinder(particles))
+        
+        intersection_points = pd.concat(intersection_points)
 
         return intersection_points
+
+    def _calculate_intersection_points_3d(self, particle: Particle) -> List[Tuple[float, float, float]]:
+        raise NotImplementedError("3D intersection points not implemented yet.")
     
     def _calculate_intersection_points_2d_plane(self, particle: Particle) -> List[Tuple[float, float, float]]:
         raise NotImplementedError("2D plane intersection points not implemented yet.")
@@ -196,8 +191,8 @@ class Detector:
         self._filter_points_on_segment_df(particle_layer_pairs)
 
         hits = pd.concat([
-            particle_layer_pairs[particle_layer_pairs['valid1']][['x1', 'y1', 'z', 'layer', 'particle_id']].rename(columns={'x1': 'x', 'y1': 'y'}),
-            particle_layer_pairs[particle_layer_pairs['valid2']][['x2', 'y2', 'z', 'layer', 'particle_id']].rename(columns={'x2': 'x', 'y2': 'y'}),
+            particle_layer_pairs[particle_layer_pairs['valid1']][['x1', 'y1', 'particle_id']].rename(columns={'x1': 'x', 'y1': 'y'}),
+            particle_layer_pairs[particle_layer_pairs['valid2']][['x2', 'y2', 'particle_id']].rename(columns={'x2': 'x', 'y2': 'y'}),
         ])
 
         return hits

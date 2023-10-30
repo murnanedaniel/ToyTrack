@@ -1,8 +1,10 @@
 from typing import Tuple, Union, List
 import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
 
-from .particle_gun import ParticleGun, Particle
-from .detector_geometry import Detector, Hit
+from .particle_gun import ParticleGun
+from .detector_geometry import Detector
 
 class Event:
     """
@@ -16,12 +18,43 @@ class Event:
         A list of Hit instances.
     """
     
-    def __init__(self, particles: list, hits: list):
+    def __init__(self, particles: list, hits: list, detector: Detector):
         """
         Initialize the Event with the given parameters.
         """
         self.particles = particles
         self.hits = hits
+        self.detector = detector
+
+    def __repr__(self):
+        return f"Event(particles={self.particles}, hits={self.hits})"
+
+    def display(self):
+        fig, ax = plt.subplots()
+
+        # Radii for the cylindrical layers
+        radii = [layer["radius"] for layer in self.detector.layers if self.detector.dimension == 2 and layer["shape"] == "cylinder"]
+
+        # Plot each cylindrical layer
+        for radius in radii:
+            circle = plt.Circle((0, 0), radius, color='gray', fill=False, linestyle='--')
+            ax.add_patch(circle)
+
+        # Plot the hits
+        cmap = plt.get_cmap('jet')  # Get the 'jet' colormap
+        colors = cmap(self.hits["particle_id"]/self.hits["particle_id"].max())  # Apply the colormap to your normalized particle IDs
+        ax.scatter(self.hits['x'], self.hits['y'], color=colors, s=10, label='Hits')
+
+        max_radius = max(radii)
+
+        ax.set_aspect('equal')
+        ax.set_xlim(-max_radius-1, max_radius+1)
+        ax.set_ylim(-max_radius-1, max_radius+1)
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        plt.show()
+
+
 
 class EventGenerator:
     """
@@ -58,16 +91,16 @@ class EventGenerator:
         Generate an event based on the initialized parameters.
         """
         # Generate the number of particles
-        num_particles = self._generate_value(self.num_particles)
+        num_particles = int(self._generate_value(self.num_particles))
 
         # Generate the particles
-        particles = [self.particle_gun.generate_particle() for _ in range(num_particles)]
+        particles = self.particle_gun.generate_particles(num_particles)
 
         # Generate the hits
-        hits = [self.detector.generate_hits(particle) for particle in particles]
+        hits = self.detector.generate_hits(particles)
 
         # Create an Event instance with the generated particles and hits
-        event = Event(particles, hits)
+        event = Event(particles, hits, self.detector)
 
         return event
 
