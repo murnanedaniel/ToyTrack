@@ -12,22 +12,28 @@ class Event:
 
     Parameters
     ----------
-    particles: list
-        A list of Particle instances.
-    hits: list
-        A list of Hit instances.
+    particles: pd.DataFrame
+        A DataFrame of particles
+    hits: pd.DataFrame
+        A DataFrame of hits
+    tracks: np.ndarray
+        A 2xN numpy array of the truth tracks.
+    detector: Detector
+        The detector used to generate the hits.
     """
     
-    def __init__(self, particles: list, hits: list, detector: Detector):
+    def __init__(self, particles: pd.DataFrame, hits: pd.DataFrame, tracks: np.ndarray, detector: Detector):
         """
         Initialize the Event with the given parameters.
         """
         self.particles = particles
         self.hits = hits
+        self.tracks = tracks
         self.detector = detector
 
+
     def __repr__(self):
-        return f"Event(particles={self.particles}, hits={self.hits})"
+        return f"Event(particles={self.particles}, hits={self.hits}), tracks={self.tracks}, detector={self.detector})"
 
     def display(self):
         fig, ax = plt.subplots()
@@ -39,6 +45,9 @@ class Event:
         for radius in radii:
             circle = plt.Circle((0, 0), radius, color='gray', fill=False, linestyle='--')
             ax.add_patch(circle)
+
+        # Plot the tracks
+        ax.plot(self.hits.x.values[self.tracks], self.hits.y.values[self.tracks], color='k', linewidth=1, alpha=0.3, label='Truth Tracks')
 
         # Plot the hits
         cmap = plt.get_cmap('jet')  # Get the 'jet' colormap
@@ -99,10 +108,44 @@ class EventGenerator:
         # Generate the hits
         hits = self.detector.generate_hits(particles)
 
+        # Generate the truth tracks
+        tracks = self._generate_truth_tracks(particles, hits)
+
         # Create an Event instance with the generated particles and hits
-        event = Event(particles, hits, self.detector)
+        event = Event(particles, hits, tracks, self.detector)
 
         return event
+
+    
+    def _generate_truth_tracks(self, particles: pd.DataFrame, hits: pd.DataFrame) -> np.ndarray:
+        """
+        Generates the 2xN list of edges for the truth tracks, as a numpy array
+
+        Parameters
+        ----------
+        particles: pd.DataFrame
+            The particles DataFrame.
+        hits: pd.DataFrame
+            The hits DataFrame.
+
+        Returns
+        -------
+        truth_tracks: np.ndarray
+            The truth tracks as a 2xN numpy array.
+        """
+
+        merged_hits = hits.merge(particles, on='particle_id')
+        merged_hits['R'] = np.sqrt((merged_hits["x"] - merged_hits["vx"])**2 + (merged_hits["y"] - merged_hits["vy"])**2)
+        sorted_hits = merged_hits.sort_values(by=['particle_id', 'R'])
+
+        track_edges = np.stack([
+            sorted_hits.index.values[:-1],
+            sorted_hits.index.values[1:]
+        ], axis=0)
+
+        track_edges = track_edges[:, hits.particle_id.values[track_edges[0]] == hits.particle_id.values[track_edges[1]]]
+
+        return track_edges
 
 
     def _generate_value(self, value: Union[float, Tuple[float, float], Tuple[float, float, str]]) -> float:

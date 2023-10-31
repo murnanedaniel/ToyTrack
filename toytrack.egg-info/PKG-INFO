@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: toytrack
-Version: 0.1.4
+Version: 0.1.5
 Summary: A package for generating toy tracking data.
 Home-page: https://github.com/murnanedaniel/ToyTrack
 Author: Author Name
@@ -39,6 +39,9 @@ event = EventGenerator(particle_gun, detector, num_particles=(20, 5, 'normal')).
 # Access the particles and hits as needed
 particles = event.particles
 hits = event.hits
+
+# Plot the event
+event.display()
 ```
 
 ![Example Event](docs/imgs/example_event.png)

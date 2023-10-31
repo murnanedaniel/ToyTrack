@@ -1,86 +1,6 @@
 import numpy as np
+import pandas as pd
 from typing import Union, Tuple, Optional, List
-
-class Particle:
-    """
-    A class that represents a particle.
-
-    Parameters
-    ----------
-    pt: float
-        The transverse momentum of the particle.
-    dimension: int
-        The dimension of the space in which the particle is generated. This can be 2 or 3.
-    vx: float
-        The creation vertex x-coordinate of the particle.
-    vy: float
-        The creation vertex y-coordinate of the particle.
-    vz: float
-        The creation vertex z-coordinate of the particle.
-    pphi: float
-        The local phi momentum of the particle at the creation vertex.
-    pz: float
-        The local z momentum of the particle at the creation vertex.
-    particle_id: int or str
-        The identifier of the particle.
-    """
-    def __init__(self, vx: float, 
-                 vy: float, 
-                 pt: float, 
-                 pphi: float, 
-                 dimension: int = None, 
-                 vz: float = None,
-                 pz: float = None,
-                 charge: int = None,
-                 particle_id: Union[int, str] = None):
-        """
-        Initialize the Particle with the given parameters.
-        """
-        self.vx = vx
-        self.vy = vy
-        self.pt = pt
-        self.pphi = pphi
-        self.dimension = dimension
-        self.charge = charge
-        self.particle_id = particle_id
-
-        if dimension == 2:
-            self.vz = 0 
-            self.pz = 0
-        elif dimension == 3:
-            self.vz = vz
-            self.pz = pz
-        else:
-            raise ValueError("Dimension must be either 2 or 3.")
-        
-        self.calculate_track_parameters()
-
-    def calculate_track_parameters(self):
-        if self.dimension == 2:
-            self.d0, self.phi = self.calculate_track_parameters_2d()
-        elif self.dimension == 3:
-            raise NotImplementedError("3D track parameters not implemented yet.")
-        
-    def calculate_track_parameters_2d(self):
-        r = 1 / self.pt
-        x0 = self.vx - self.charge * r * np.cos(self.pphi)
-        y0 = self.vy - self.charge * r * np.sin(self.pphi)
-        
-        r0_magnitude = np.sqrt(x0**2 + y0**2)
-        
-        lambda_ = r / r0_magnitude
-        
-        Px = x0 * (1 - lambda_)
-        Py = y0 * (1 - lambda_)
-        
-        d0 = np.sqrt(Px**2 + Py**2)
-        phi = np.arctan2(Py, Px)
-        
-        return d0, phi
-        
-    def __repr__(self):
-        return f"Particle(vx={self.vx}, vy={self.vy}, vz={self.vz}, pt={self.pt}, pphi={self.pphi}, pz={self.pz}, dimension={self.dimension}, charge={self.charge}, particle_id={self.particle_id})"
-
 
 class ParticleGun:
     """
@@ -130,9 +50,9 @@ class ParticleGun:
         else:
             raise ValueError("Dimension must be either 2 or 3.")
 
-    def generate_particles(self, num_particles: int = 1) -> List[Particle]:
+    def generate_particles(self, num_particles: int = 1) -> pd.DataFrame:
         """
-        Generate a list of particles based on the initialized parameters.
+        Generate a DataFrame of particles based on the initialized parameters.
         """
         pt = self._generate_values(self.pt, num_particles)
         pphi = self._generate_values(self.pphi, num_particles)
@@ -141,17 +61,50 @@ class ParticleGun:
         vz = self._generate_values(self.vz, num_particles)
         charge = np.random.choice([-1, 1], size=num_particles)
         
-        # Create a Particle instance with the generated values
-        particles = [Particle(vx = vx[i],
-                                vy = vy[i],
-                                vz = vz[i],
-                                pt = pt[i],
-                                pphi = pphi[i],
-                                dimension = self.dimension,
-                                charge = charge[i],
-                                particle_id = i) for i in range(num_particles)]
+        # Create a DataFrame with the generated values
+        particles = pd.DataFrame({
+            'vx': vx,
+            'vy': vy,
+            'vz': vz,
+            'pt': pt,
+            'pphi': pphi,
+            'dimension': self.dimension,
+            'charge': charge,
+            'particle_id': range(num_particles)
+        })
+
+        # Calculate track parameters
+        particles = self.calculate_track_parameters(particles)
 
         return particles
+
+    def calculate_track_parameters(self, particles: pd.DataFrame) -> pd.DataFrame:
+        """
+        Calculate track parameters for a DataFrame of particles.
+        """
+        if self.dimension == 2:
+            particles['d0'], particles['phi'] = self.calculate_track_parameters_2d(particles)
+        elif self.dimension == 3:
+            raise NotImplementedError("3D track parameters not implemented yet.")
+        
+        return particles
+
+    def calculate_track_parameters_2d(self, particles: pd.DataFrame) -> Tuple[pd.Series, pd.Series]:
+        r = 1 / particles['pt']
+        x0 = particles['vx'] - particles['charge'] * r * np.cos(particles['pphi'])
+        y0 = particles['vy'] - particles['charge'] * r * np.sin(particles['pphi'])
+        
+        r0_magnitude = np.sqrt(x0**2 + y0**2)
+        
+        lambda_ = r / r0_magnitude
+        
+        Px = x0 * (1 - lambda_)
+        Py = y0 * (1 - lambda_)
+        
+        d0 = np.sqrt(Px**2 + Py**2)
+        phi = np.arctan2(Py, Px)
+        
+        return d0, phi
 
     def _generate_values(self, value: Union[float, Tuple[float, float], Tuple[float, float, str]], size: int) -> np.ndarray:
         """

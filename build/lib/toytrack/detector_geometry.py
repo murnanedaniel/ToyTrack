@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from typing import Union, Tuple, Optional, List
 
-from .particle_gun import ParticleGun, Particle
+from .particle_gun import ParticleGun
 
 
 
@@ -88,6 +88,8 @@ class Detector:
         else:
             raise ValueError("Template must be 'barrel' or 'endcap'.")
 
+        return self
+
     def add_barrel(self, min_radius: float, max_radius: float, number_of_layers: int, length: float = None):
         """
         Add a barrel detector. Layers are spaced evenly between min_radius and max_radius.
@@ -122,7 +124,7 @@ class Detector:
         self.layers.extend(endcap_layers)
         
 
-    def generate_hits(self, particles: List[Particle]) -> pd.DataFrame:
+    def generate_hits(self, particles: pd.DataFrame) -> pd.DataFrame:
         """
         Generate a DataFrame of hits based on the given particles.
         """
@@ -131,16 +133,19 @@ class Detector:
 
         return hits_df
     
-    def _generate_hits(self, particles: List[Particle]) -> pd.DataFrame:
+    def _generate_hits(self, particles: pd.DataFrame) -> pd.DataFrame:
         """
         Helper method to generate a list of hits based on the given particle.
         """
         # Calculate the intersection points of the particle trajectory with the detector
         hits = self._calculate_intersection_points(particles)
 
+        # Reset the index on the hits
+        hits.reset_index(drop=True, inplace=True)
+        
         return hits
     
-    def _calculate_intersection_points(self, particles: List[Particle]) -> pd.DataFrame:
+    def _calculate_intersection_points(self, particles: pd.DataFrame) -> pd.DataFrame:
         """
         Helper method to calculate the intersection points of the particle trajectory with the detector.
         """
@@ -154,7 +159,7 @@ class Detector:
 
         return intersection_points
     
-    def _calculate_intersection_points_2d(self, particles: List[Particle]) -> pd.DataFrame:
+    def _calculate_intersection_points_2d(self, particles: pd.DataFrame) -> pd.DataFrame:
         """
         Helper method to calculate the intersection points of the particle trajectory with the detector in 2D.
         """
@@ -166,18 +171,16 @@ class Detector:
 
         return intersection_points
 
-    def _calculate_intersection_points_3d(self, particle: Particle) -> List[Tuple[float, float, float]]:
+    def _calculate_intersection_points_3d(self, particles: pd.DataFrame) -> List[Tuple[float, float, float]]:
         raise NotImplementedError("3D intersection points not implemented yet.")
     
-    def _calculate_intersection_points_2d_plane(self, particle: Particle) -> List[Tuple[float, float, float]]:
+    def _calculate_intersection_points_2d_plane(self, particles: pd.DataFrame) -> List[Tuple[float, float, float]]:
         raise NotImplementedError("2D plane intersection points not implemented yet.")
     
-    def _calculate_intersection_points_2d_cylinder(self, particles: List[Particle]) -> List[Tuple[float, float, float]]:
+    def _calculate_intersection_points_2d_cylinder(self, particles_df: pd.DataFrame) -> List[Tuple[float, float, float]]:
         """
         Helper method to calculate the intersection points of the particle trajectory with the detector in 2D.
         """
-        # Convert particle list to a pandas dataframe
-        particles_df = pd.DataFrame(vars(particle) for particle in particles)
         layers_df = pd.DataFrame(self.layers)
         # Narrow to only the layers that are cylinders
         layers_df = layers_df[layers_df['shape'] == 'cylinder']
