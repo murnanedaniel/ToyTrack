@@ -152,7 +152,7 @@ class EventGenerator:
         """
         Helper method to generate a value based on the input which can be a float or a tuple.
         """
-        if isinstance(value, float):
+        if isinstance(value, int) or isinstance(value, float):
             return value
         elif isinstance(value, tuple):
             if len(value) == 2:
