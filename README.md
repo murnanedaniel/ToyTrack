@@ -27,20 +27,19 @@ detector = Detector(dimension=2).add_from_template('barrel', min_radius=0.5, max
 # distribution, with mean 10 and standard deviation 5
 event = EventGenerator(particle_gun, detector, num_particles=(20, 5, 'normal')).generate_event()
 
-# Access the particles and hits as needed
+# Access the particles, hits and tracks as needed
 particles = event.particles
 hits = event.hits
+tracks = event.tracks
 
 # Plot the event
 event.display()
 ```
 
-![Example Event](docs/imgs/example_event.png)
-
-
+![Example Event](https://raw.githubusercontent.com/murnanedaniel/ToyTrack/main/docs/imgs/example_event.png)
 
 ## Performance
 
 ToyTrack is designed to be fast. The following benchmarks were performed on a 64-core AMD EPYC 7763 (Milan) CPU. 
 
-![Scaling Study](docs/imgs/time_scaling.png)
+![Scaling Study](https://raw.githubusercontent.com/murnanedaniel/ToyTrack/main/docs/imgs/time_scaling.png)
