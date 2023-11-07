@@ -68,13 +68,18 @@ class Detector:
         The spacing between layers of the detector.
     number_of_layers: int
         The number of layers in the detector.      
+    hole_inefficiency: int, float
+        If specified: If a float, then this is the inefficiency of each layer - i.e. the
+        probability that a hit will not be recorded. If an int, then this is the number of
+        holes that will be guaranteed per particle.
     """
 
-    def __init__(self, dimension: int):
+    def __init__(self, dimension: int, hole_inefficiency: Union[int, float] = 0):
         """
         Initialize the Detector with the given parameters.
         """
         self.dimension = dimension
+        self.hole_inefficiency = hole_inefficiency
         self.layers = []
 
     def add_from_template(self, template: str = None, **kwargs):
@@ -131,6 +136,10 @@ class Detector:
         # Generate the hits
         hits_df = self._generate_hits(particles)
 
+        # Generate holes
+        if self.hole_inefficiency > 0:
+            hits_df = self._generate_holes(hits_df)
+
         return hits_df
     
     def _generate_hits(self, particles: pd.DataFrame) -> pd.DataFrame:
@@ -144,6 +153,44 @@ class Detector:
         hits.reset_index(drop=True, inplace=True)
         
         return hits
+
+    def _generate_holes(self, hits_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Helper method to generate holes in the hits DataFrame.
+        """
+        # Calculate the number of holes to generate
+        if isinstance(self.hole_inefficiency, float):
+            hits_df = self._generate_holes_probabilistic(hits_df)
+        elif isinstance(self.hole_inefficiency, int):
+            hits_df = self._generate_holes_deterministic(hits_df)
+
+        return hits_df
+    
+    def _generate_holes_probabilistic(self, hits_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Each hit is given a random number between 0 and 1. If this number is less than the hole inefficiency,
+        then the hit is removed.
+        """
+        random_hole_probability = np.random.uniform(size=len(hits_df))
+        hits_df = hits_df[random_hole_probability > self.hole_inefficiency]
+
+        return hits_df
+    
+    def _generate_holes_deterministic(self, hits_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        For each particle, remove a random number of hits equal to the hole inefficiency.
+        """
+
+        # Remove a random number of hits for each particle
+        holes = hits_df.groupby('particle_id').sample(n=self.hole_inefficiency, random_state=42)
+        
+        if self.hole_inefficiency > 1:
+            holes = holes.droplevel(0)
+
+        # Drop these holes from the hits_df
+        hits_df = hits_df.drop(holes.index)
+
+        return hits_df
     
     def _calculate_intersection_points(self, particles: pd.DataFrame) -> pd.DataFrame:
         """
