@@ -1,5 +1,7 @@
 # ToyTrack
 
+[![Documentation Status](https://readthedocs.org/projects/toytrack/badge/?version=latest)](https://toytrack.readthedocs.io/en/latest/?badge=latest)
+
 ToyTrack is a Python library for generating toy tracking events for particle physics. 
 
 **The goal**: To produce a "*good-enough*" event simulation, in as few lines as possible (currently 3 lines), as quickly as possible (currently 0.07 seconds for a 10,000-particle event).
