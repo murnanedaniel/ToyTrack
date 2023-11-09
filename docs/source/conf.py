@@ -1,6 +1,14 @@
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../..'))
+
+# Add the project's root dir to the system path to make sure that toytrack is found
+sys.path.insert(0, os.path.abspath('../../'))
+
+master_doc = 'index'
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown',
+}
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -26,6 +34,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.githubpages',
     'sphinx.ext.autosummary',
+    'myst_parser',
 ]
 
 
