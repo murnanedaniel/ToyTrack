@@ -14,7 +14,10 @@ Use the package manager [pip](https://pip.pypa.io/en/stable/) to install ToyTrac
 pip install toytrack
 ```
 
-## Usage
+# Usage
+
+## Vanilla Event
+
 ```python
 from toytrack import ParticleGun, Detector, EventGenerator
 
@@ -39,6 +42,41 @@ event.display()
 ```
 
 ![Example Event](https://raw.githubusercontent.com/murnanedaniel/ToyTrack/main/docs/imgs/example_event.png)
+
+## Event with Track Holes
+
+```python
+... # as above
+
+# Initialize a detector that randomly drops 10% of hits. If an int N is given, then exactly
+# N hits per track are dropped
+detector = Detector(dimension=2, hole_inefficiency=0.1).add_from_template('barrel', min_radius=0.5, max_radius=3, number_of_layers=10)
+
+... # as above
+
+# Plot the event
+event.display()
+```
+
+![Example Event with Holes](https://raw.githubusercontent.com/murnanedaniel/ToyTrack/main/docs/imgs/example_event_holes.png)
+
+## Event with Noise Hits
+
+```python
+... # as above
+
+# Generate event with between 30% and 70% noise hits per real hits. E.g. If the event has 100 
+# real hits, then between 30 and 70 noise hits will be generated. If an int N is given, then
+# the absolute value of N noise hits are generated
+event = EventGenerator(particle_gun, detector, num_particles=(20, 5, 'normal'), noise=(0.3, 0.7)).generate_event()
+
+... # as above
+
+# Plot the event
+event.display()
+```
+
+![Example Event with Noise](https://raw.githubusercontent.com/murnanedaniel/ToyTrack/main/docs/imgs/example_event_noise.png)
 
 ## Performance
 
