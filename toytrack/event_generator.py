@@ -49,10 +49,17 @@ class Event:
         # Plot the tracks
         ax.plot(self.hits.x.values[self.tracks], self.hits.y.values[self.tracks], color='k', linewidth=1, alpha=0.3, label='Truth Tracks')
 
-        # Plot the hits
+        # Separate noise and non-noise hits
+        noise_hits = self.hits[self.hits["particle_id"] == -1]
+        non_noise_hits = self.hits[self.hits["particle_id"] != -1]
+
+        # Plot the noise hits
+        ax.scatter(noise_hits['x'], noise_hits['y'], color='gray', s=10, label='Noise')
+
+        # Plot the non-noise hits
         cmap = plt.get_cmap('jet')  # Get the 'jet' colormap
-        colors = cmap(self.hits["particle_id"]/self.hits["particle_id"].max())  # Apply the colormap to your normalized particle IDs
-        ax.scatter(self.hits['x'], self.hits['y'], color=colors, s=10, label='Hits')
+        colors = cmap(non_noise_hits["particle_id"]/non_noise_hits["particle_id"].max())  # Apply the colormap to your normalized particle IDs
+        ax.scatter(non_noise_hits['x'], non_noise_hits['y'], color=colors, s=10, label='Hits')
 
         max_radius = max(radii)
 
@@ -85,15 +92,24 @@ class EventGenerator:
         maximum of the uniform distribution. If the third entry is 'normal', then the first two entries are the mean
         and standard deviation of the normal distribution. If the third entry is 'poisson', then the first two entries
         are the mean and standard deviation of the poisson distribution.
+    noise: float, tuple
+        The amount of noise to add to the hits. This can be specified in three ways as for num_particles.
+        If the values are given as non-zero integers, then the noise is added as a fixed number of hits.
+        If the values are given as floats between 0 and 1, then the noise is added as a fraction of the number of non-noise hits.
     """
 
-    def __init__(self, particle_gun: ParticleGun, detector: Detector, num_particles: Union[float, Tuple[float, float], Tuple[float, float, str]]):
+    def __init__(self, particle_gun: ParticleGun, 
+                    detector: Detector, 
+                    num_particles: Union[float, Tuple[float, float], Tuple[float, float, str]],
+                    noise: Union[float, Tuple[float, float], Tuple[float, float, str], int, Tuple[int, int], Tuple[int, int, str]] = None
+                 ):
         """
         Initialize the EventGenerator with the given parameters.
         """
         self.particle_gun = particle_gun
         self.detector = detector
         self.num_particles = num_particles
+        self.noise = noise
 
     def generate_event(self):
         """
@@ -108,6 +124,11 @@ class EventGenerator:
         # Generate the hits
         hits = self.detector.generate_hits(particles)
 
+        # Add noise to the hits
+        if self.noise is not None:
+            num_noise = self._get_num_noise(self.noise, hits)
+            hits = self.detector.generate_noise(hits, num_noise)
+
         # Generate the truth tracks
         tracks = self._generate_truth_tracks(particles, hits)
 
@@ -116,6 +137,22 @@ class EventGenerator:
 
         return event
 
+    def _get_num_noise(self, noise: Union[float, Tuple[float, float], Tuple[float, float, str], int, Tuple[int, int], Tuple[int, int, str]], hits: pd.DataFrame) -> int:
+        """
+        Helper method to generate the number of noise hits based on the input which can be a float, tuple or int.
+        If the inputs are floats, then first convert to a raw number of hits, by multiplying by the number of hits.
+        """
+
+        num_hits = len(hits)
+        if isinstance(noise, float):
+            noise = int(noise*num_hits)
+        elif isinstance(noise, tuple) and len(noise) == 2 and isinstance(noise[0], float):
+            noise = (int(noise[0]*num_hits), int(noise[1]*num_hits))
+        elif isinstance(noise, tuple) and len(noise) == 3 and isinstance(noise[0], float):
+            noise = (int(noise[0]*num_hits), int(noise[1]*num_hits), noise[2])
+        
+        return int(self._generate_value(noise))
+        
     
     def _generate_truth_tracks(self, particles: pd.DataFrame, hits: pd.DataFrame) -> np.ndarray:
         """
@@ -134,15 +171,22 @@ class EventGenerator:
             The truth tracks as a 2xN numpy array.
         """
 
-        merged_hits = hits.merge(particles, on='particle_id')
+        # Remove noise hits
+        non_noise_hits = hits[hits["particle_id"] != -1].reset_index()
+        non_noise_hits.rename(columns={'index': 'hit_id'}, inplace=True)
+
+        # Sort the hits by particle ID and then by R
+        merged_hits = non_noise_hits.merge(particles, on='particle_id')
         merged_hits['R'] = np.sqrt((merged_hits["x"] - merged_hits["vx"])**2 + (merged_hits["y"] - merged_hits["vy"])**2)
         sorted_hits = merged_hits.sort_values(by=['particle_id', 'R'])
 
+        # Get the edges of the tracks
         track_edges = np.stack([
-            sorted_hits.index.values[:-1],
-            sorted_hits.index.values[1:]
+            sorted_hits.hit_id.values[:-1],
+            sorted_hits.hit_id.values[1:]
         ], axis=0)
 
+        # Remove edges that don't have the same particle ID, just in case
         track_edges = track_edges[:, hits.particle_id.values[track_edges[0]] == hits.particle_id.values[track_edges[1]]]
 
         return track_edges

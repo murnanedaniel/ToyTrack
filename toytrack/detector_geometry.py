@@ -141,6 +141,50 @@ class Detector:
             hits_df = self._generate_holes(hits_df)
 
         return hits_df
+
+    def generate_noise(self, hits_df: pd.DataFrame, num_noise: int) -> pd.DataFrame:
+        """
+        Generate a DataFrame of noise hits.
+        """
+        # Generate the noise
+        hits_df = self._generate_noise(hits_df, num_noise)
+
+        return hits_df
+
+    def _generate_noise(self, hits_df: pd.DataFrame, num_noise: int) -> pd.DataFrame:
+        """
+        Helper method to generate noise hits. Samples a random set of points that satisfy the detector geometry.
+        """
+
+        # Generate a random angle for each noise hit
+        phi = np.random.uniform(0, 2 * np.pi, num_noise)
+
+        # Generate a random layer index for each noise hit
+        layer_indices = np.random.randint(0, len(self.layers), num_noise)
+
+        # Create a lookup array for the radii of the layers
+        radii = np.array([layer['radius'] for layer in self.layers])
+
+        # Get the radius of the selected layer for each noise hit
+        r = radii[layer_indices]
+
+        # Convert the polar coordinates to Cartesian coordinates
+        x = r * np.cos(phi)
+        y = r * np.sin(phi)
+
+        # Create a DataFrame of the noise hits
+        noise_df = pd.DataFrame({
+            'x': x,
+            'y': y,
+            'particle_id': -1,
+        })
+
+        # Mix together hits and noise randomly
+        hits_df = pd.concat([hits_df, noise_df])
+        hits_df = hits_df.sample(frac=1, random_state=42).reset_index(drop=True)
+
+        return hits_df
+
     
     def _generate_hits(self, particles: pd.DataFrame) -> pd.DataFrame:
         """
