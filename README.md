@@ -41,7 +41,7 @@ tracks = event.tracks
 event.display()
 ```
 
-![Example Event](https://raw.githubusercontent.com/murnanedaniel/ToyTrack/main/docs/imgs/example_event.png)
+![Example Event](https://raw.githubusercontent.com/murnanedaniel/ToyTrack/main/docs/imgs/example_event_vanilla.png)
 
 ## Event with Track Holes
 
