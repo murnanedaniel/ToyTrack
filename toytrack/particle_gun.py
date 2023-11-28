@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from typing import Union, Tuple, Optional, List
+from typing import Union, List, Optional
 
 class ParticleGun:
     """
@@ -10,31 +10,31 @@ class ParticleGun:
     ----------
     dimension: int
         The dimension of the space in which the particles are generated. This can be 2 or 3.
-    pt: float, tuple
+    pt: float, list
         The transverse momentum of the particles to be generated. This can be specified in three ways:
         1. A float: All particles will be generated with this transverse momentum.
-        2. A tuple (min, max): Particles will be generated uniform-random with a transverse momentum in this range.
-        3. A tuple (float, float, dist_type): Particles will be generated with a transverse momentum in the range 
+        2. A list [min, max]: Particles will be generated uniform-random with a transverse momentum in this range.
+        3. A list [float, float, dist_type]: Particles will be generated with a transverse momentum in the range 
         specified by the first two elements. The third element, dist_type, specifies the distribution type and can 
         be either 'uniform' or 'normal'. If uniform, then particles will be generated uniform-random in the range.
         If normal, then the first entry is the mean, the second entry is the standard deviation, and particles will
         be generated with a normal distribution.
-    vx: float, tuple
+    vx: float, list
         The creation vertex x-coordinate of the particles to be generated. This can be specified in the same ways as pt.
-    vy: float, tuple
+    vy: float, list
         The creation vertex y-coordinate of the particles to be generated. This can be specified in the same ways as pt.
-    vz: float, tuple
+    vz: float, list
         The creation vertex z-coordinate of the particles to be generated. This can be specified in the same ways as pt.
-    pphi: float, tuple
+    pphi: float, list
         The local phi momentum of the particles to be generated. This can be specified in the same ways as pt.
     """
 
     def __init__(self, dimension: int,
-                 pt: Union[float, Tuple[float, float], Tuple[float, float, str]],
-                 pphi: Union[float, Tuple[float, float], Tuple[float, float, str]],
-                 vx: Union[float, Tuple[float, float], Tuple[float, float, str]],
-                 vy: Union[float, Tuple[float, float], Tuple[float, float, str]],
-                 vz: Optional[Union[float, Tuple[float, float], Tuple[float, float, str]]] = None):
+                 pt: Union[float, List[float], List[Union[float, str]]],
+                 pphi: Union[float, List[float], List[Union[float, str]]],
+                 vx: Union[float, List[float], List[Union[float, str]]],
+                 vy: Union[float, List[float], List[Union[float, str]]],
+                 vz: Optional[Union[float, List[float], List[Union[float, str]]]] = None):
         """
         Initialize the ParticleGun with the given parameters.
         """
@@ -89,7 +89,7 @@ class ParticleGun:
         
         return particles
 
-    def calculate_track_parameters_2d(self, particles: pd.DataFrame) -> Tuple[pd.Series, pd.Series]:
+    def calculate_track_parameters_2d(self, particles: pd.DataFrame) -> List[pd.Series]:
         r = 1 / particles['pt']
         x0 = particles['vx'] - particles['charge'] * r * np.cos(particles['pphi'])
         y0 = particles['vy'] - particles['charge'] * r * np.sin(particles['pphi'])
@@ -104,15 +104,15 @@ class ParticleGun:
         d0 = np.sqrt(Px**2 + Py**2)
         phi = np.arctan2(Py, Px)
         
-        return d0, phi
+        return [d0, phi]
 
-    def _generate_values(self, value: Union[float, Tuple[float, float], Tuple[float, float, str]], size: int) -> np.ndarray:
+    def _generate_values(self, value: Union[float, List[float], List[Union[float, str]]], size: int) -> np.ndarray:
         """
-        Helper method to generate an array of values based on the input which can be a float or a tuple.
+        Helper method to generate an array of values based on the input which can be a float or a list.
         """
         if isinstance(value, float) or isinstance(value, int):
             return np.full(size, value, dtype=float)
-        elif isinstance(value, tuple):
+        elif isinstance(value, list):
             if len(value) == 2:
                 return np.random.uniform(*value, size=size)
             elif len(value) == 3 and value[2] == 'uniform':
@@ -120,7 +120,7 @@ class ParticleGun:
             elif len(value) == 3 and value[2] == 'normal':
                 return np.random.normal(*value[:2], size=size)
         else:
-            raise ValueError("Value must be either a float or a tuple.")
+            raise ValueError("Value must be either a float or a list.")
             
     def __repr__(self):
         return f"ParticleGun(dimension={self.dimension}, pt={self.pt}, pphi={self.pphi}, vx={self.vx}, vy={self.vy}, vz={self.vz})"

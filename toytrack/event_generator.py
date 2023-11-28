@@ -1,4 +1,4 @@
-from typing import Tuple, Union, List
+from typing import List, Union
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -82,17 +82,17 @@ class EventGenerator:
         The particle gun to use to generate particles.
     detector: Detector
         The detector to use to generate hits.
-    num_particles: float, tuple
+    num_particles: float, list
         The number of particles to generate. This can be specified in three ways:
         - A single float: This will generate a fixed number of particles.
         - A pair of floats: This will generate a random number of particles with a uniform distribution.
-        - A tuple of three floats: This will generate a random number of particles. The third entry of the tuple
+        - A list of three floats: This will generate a random number of particles. The third entry of the list
         is the distribution type (uniform, normal or poisson), and the first two entries are the parameters of the
         distribution. For example, if the third entry is 'uniform', then the first two entries are the minimum and
         maximum of the uniform distribution. If the third entry is 'normal', then the first two entries are the mean
         and standard deviation of the normal distribution. If the third entry is 'poisson', then the first two entries
         are the mean and standard deviation of the poisson distribution.
-    noise: float, tuple
+    noise: float, list
         The amount of noise to add to the hits. This can be specified in three ways as for num_particles.
         If the values are given as non-zero integers, then the noise is added as a fixed number of hits.
         If the values are given as floats between 0 and 1, then the noise is added as a fraction of the number of non-noise hits.
@@ -100,8 +100,8 @@ class EventGenerator:
 
     def __init__(self, particle_gun: ParticleGun, 
                     detector: Detector, 
-                    num_particles: Union[float, Tuple[float, float], Tuple[float, float, str]],
-                    noise: Union[float, Tuple[float, float], Tuple[float, float, str], int, Tuple[int, int], Tuple[int, int, str]] = None
+                    num_particles: Union[float, List[float], List[Union[float, str]]],
+                    noise: Union[float, List[float], List[Union[float, str]], int, List[int], List[Union[int, str]]] = None
                  ):
         """
         Initialize the EventGenerator with the given parameters.
@@ -137,19 +137,19 @@ class EventGenerator:
 
         return event
 
-    def _get_num_noise(self, noise: Union[float, Tuple[float, float], Tuple[float, float, str], int, Tuple[int, int], Tuple[int, int, str]], hits: pd.DataFrame) -> int:
+    def _get_num_noise(self, noise: Union[float, List[float], List[Union[float, str]], int, List[int], List[Union[int, str]]], hits: pd.DataFrame) -> int:
         """
-        Helper method to generate the number of noise hits based on the input which can be a float, tuple or int.
+        Helper method to generate the number of noise hits based on the input which can be a float, list or int.
         If the inputs are floats, then first convert to a raw number of hits, by multiplying by the number of hits.
         """
 
         num_hits = len(hits)
         if isinstance(noise, float):
             noise = int(noise*num_hits)
-        elif isinstance(noise, tuple) and len(noise) == 2 and isinstance(noise[0], float):
-            noise = (int(noise[0]*num_hits), int(noise[1]*num_hits))
-        elif isinstance(noise, tuple) and len(noise) == 3 and isinstance(noise[0], float):
-            noise = (int(noise[0]*num_hits), int(noise[1]*num_hits), noise[2])
+        elif isinstance(noise, list) and len(noise) == 2 and isinstance(noise[0], float):
+            noise = [int(noise[0]*num_hits), int(noise[1]*num_hits)]
+        elif isinstance(noise, list) and len(noise) == 3 and isinstance(noise[0], float):
+            noise = [int(noise[0]*num_hits), int(noise[1]*num_hits), noise[2]]
         
         return int(self._generate_value(noise))
         
@@ -192,13 +192,13 @@ class EventGenerator:
         return track_edges
 
 
-    def _generate_value(self, value: Union[float, Tuple[float, float], Tuple[float, float, str]]) -> float:
+    def _generate_value(self, value: Union[float, List[float], List[Union[float, str]]]) -> float:
         """
-        Helper method to generate a value based on the input which can be a float or a tuple.
+        Helper method to generate a value based on the input which can be a float or a list.
         """
         if isinstance(value, int) or isinstance(value, float):
             return value
-        elif isinstance(value, tuple):
+        elif isinstance(value, list):
             if len(value) == 2:
                 return np.random.uniform(*value)
             elif len(value) == 3 and value[2] == 'uniform':
