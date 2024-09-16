@@ -6,13 +6,13 @@ with open('README.md', 'r') as f:
 
 setup(
     name='toytrack',
-    version='0.1.9',
+    version='0.1.11',
     url='https://github.com/murnanedaniel/ToyTrack',
-    author='Author Name',
-    author_email='dtmurnane@lbl.gov',
+    author='Daniel Murnane',
+    author_email='daniel.thomas.murnane@cern.ch',
     description='A package for generating toy tracking data.',
     long_description=long_description,
     long_description_content_type='text/markdown',
     packages=find_packages(),
-    install_requires=['numpy >= 1.11.1', 'pandas >= 0.18.1'],
+    install_requires=['numpy >= 2.0.0', 'pandas >= 2.0.0', 'matplotlib >= 3.8.0'],
 )
