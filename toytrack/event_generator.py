@@ -78,48 +78,40 @@ class EventGenerator:
 
     Parameters
     ----------
-    particle_gun: ParticleGun
-        The particle gun to use to generate particles.
+    particle_gun: ParticleGun or List[ParticleGun]
+        The particle gun(s) to use to generate particles.
     detector: Detector
         The detector to use to generate hits.
-    num_particles: float, list
-        The number of particles to generate. This can be specified in three ways:
-        - A single float: This will generate a fixed number of particles.
-        - A pair of floats: This will generate a random number of particles with a uniform distribution.
-        - A list of three floats: This will generate a random number of particles. The third entry of the list
-        is the distribution type (uniform, normal or poisson), and the first two entries are the parameters of the
-        distribution. For example, if the third entry is 'uniform', then the first two entries are the minimum and
-        maximum of the uniform distribution. If the third entry is 'normal', then the first two entries are the mean
-        and standard deviation of the normal distribution. If the third entry is 'poisson', then the first two entries
-        are the mean and standard deviation of the poisson distribution.
     noise: float, list
-        The amount of noise to add to the hits. This can be specified in three ways as for num_particles.
+        The amount of noise to add to the hits. This can be specified in three ways:
+        - A single float: This will add a fixed fraction of noise hits.
+        - A pair of floats: This will add a random fraction of noise hits with a uniform distribution.
+        - A list of three elements: This will add a random fraction of noise hits. The third entry of the list
+        is the distribution type (uniform, normal or poisson), and the first two entries are the parameters of the
+        distribution.
         If the values are given as non-zero integers, then the noise is added as a fixed number of hits.
         If the values are given as floats between 0 and 1, then the noise is added as a fraction of the number of non-noise hits.
     """
 
-    def __init__(self, particle_gun: ParticleGun, 
-                    detector: Detector, 
-                    num_particles: Union[float, List[float], List[Union[float, str]]],
-                    noise: Union[float, List[float], List[Union[float, str]], int, List[int], List[Union[int, str]]] = None
-                 ):
+    def __init__(self, 
+                 particle_gun: Union[ParticleGun, List[ParticleGun]], 
+                 detector: Detector, 
+                 noise: Union[float, List[float], List[Union[float, str]], int, List[int], List[Union[int, str]]] = None
+                ):
         """
         Initialize the EventGenerator with the given parameters.
         """
-        self.particle_gun = particle_gun
+        self.particle_gun = particle_gun if isinstance(particle_gun, list) else [particle_gun]
         self.detector = detector
-        self.num_particles = num_particles
         self.noise = noise
 
     def generate_event(self):
         """
         Generate an event based on the initialized parameters.
         """
-        # Generate the number of particles
-        num_particles = int(self._generate_value(self.num_particles))
-
-        # Generate the particles
-        particles = self.particle_gun.generate_particles(num_particles)
+        # Generate particles from all guns and concatenate them
+        particles = pd.concat([gun.generate_particles() for gun in self.particle_gun], ignore_index=True)
+        particles["particle_id"] = particles.index
 
         # Generate the hits
         hits = self.detector.generate_hits(particles)
@@ -205,3 +197,5 @@ class EventGenerator:
                 return np.random.uniform(*value[:2])
             elif len(value) == 3 and value[2] == 'normal':
                 return np.random.normal(*value[:2])
+            elif len(value) == 3 and value[2] == 'poisson':
+                return np.random.poisson(value[0])

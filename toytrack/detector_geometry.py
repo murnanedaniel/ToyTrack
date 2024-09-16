@@ -232,7 +232,7 @@ class Detector:
             holes = holes.droplevel(0)
 
         # Drop these holes from the hits_df
-        hits_df = hits_df.drop(holes.index)
+        hits_df = hits_df.drop(holes.index).reset_index(drop=True)
 
         return hits_df
     
