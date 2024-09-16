@@ -92,8 +92,7 @@ particle_gun_2 = ParticleGun(num_particles=1, pt=[100, 200], pphi=[-np.pi, np.pi
 
 ... # as above
 
-# Initialize an event generator, which generates an event with a number of particles given by a normal
-# distribution, with mean 10 and standard deviation 5
+# Initialize an event generator with a list of particle guns
 event = EventGenerator([particle_gun_1, particle_gun_2], detector).generate_event()
 
 ... # as above
