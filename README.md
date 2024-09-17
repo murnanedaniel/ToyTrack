@@ -14,6 +14,12 @@ Use the package manager [pip](https://pip.pypa.io/en/stable/) to install ToyTrac
 pip install toytrack
 ```
 
+Optionally, there are Pytorch dataloaders available for convenience. These require the `torch` package.
+
+```bash
+pip install toytrack[torch]
+```
+
 # Usage
 
 ## Vanilla Event
@@ -103,9 +109,62 @@ event.display()
 
 ![Example Event with Multiple Particle Guns](https://raw.githubusercontent.com/murnanedaniel/ToyTrack/main/docs/imgs/example_event_multigun.png)
 
-## Performance
+# Performance
 
 ToyTrack is designed to be fast. The following benchmarks were performed on a 64-core AMD EPYC 7763 (Milan) CPU. 
 
 ![Scaling Study](https://raw.githubusercontent.com/murnanedaniel/ToyTrack/main/docs/imgs/time_scaling.png)
 
+# Data Loading
+
+## Pytorch Dataset
+
+The `TracksDataset` class is a Pytorch dataset which can be use the generator with a Pytorch dataloader.
+
+```python
+config = {
+    "detector": {
+        "dimension": 2,
+        "hole_inefficiency": 0,
+        "min_radius": 0.5,
+        "max_radius": 3.,
+        "number_of_layers": 10
+    },
+    "particle_guns": [
+        {
+            "num_particles": [20, 5, 'normal'],
+            "pt": [2, 20],
+            "pphi": [-3.14159, 3.14159],
+            "vx": [-0.1, 0.1],
+            "vy": [-0.1, 0.1]
+        }
+    ],
+    "outputs": {
+        "x": True,
+        "mask": True,
+        "pids": True,
+        "event": True
+    }
+}
+
+# initialize dataloader
+dataset = TracksDataset(config)
+
+# iterate over dataset
+for batch in dataset:
+    x, mask, pids, event = batch["x"], batch["mask"], batch["pids"], batch["event"]
+    # Do something with the batch!
+```
+
+## Pytorch DataLoader
+
+```python
+from torch.utils.data import DataLoader
+
+dataloader = DataLoader(dataset, batch_size=100, collate_fn=collate_fn)
+
+# iterate over dataloader
+for batch in dataloader:
+    x, mask, pids, event = batch["x"], batch["mask"], batch["pids"], batch["event"]
+    # Do something with the batch (which now has an extra batch dimension of size 100)
+```
