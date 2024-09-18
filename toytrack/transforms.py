@@ -62,7 +62,7 @@ class TrackletPatchify:
 
         # Get N^2 patch pair combinations as edge_index
         sample['edge_index'] = torch.combinations(torch.arange(sample['x'].shape[0]), r=2)
-        sample['edge_mask'] = torch.ones(sample['edge_index'].shape[1], dtype=torch.bool)
+        sample['edge_mask'] = torch.ones(sample['edge_index'].shape[0], dtype=torch.bool)
 
         # Get the y truth
         sample['y'] = sample['pids'][sample['edge_index'][..., 0]] == sample['pids'][sample['edge_index'][..., 1]]
