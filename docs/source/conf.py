@@ -37,6 +37,8 @@ extensions = [
     'myst_parser',
 ]
 
+# Add this line
+autodoc_mock_imports = ["toytrack.dataloaders", "toytrack.transforms"]
 
 templates_path = ['_templates']
 exclude_patterns = []
