@@ -6,7 +6,7 @@ with open('README.md', 'r') as f:
 
 setup(
     name='toytrack',
-    version='0.1.15',
+    version='0.1.17',
     url='https://github.com/murnanedaniel/ToyTrack',
     author='Daniel Murnane',
     author_email='daniel.thomas.murnane@cern.ch',
@@ -14,7 +14,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     packages=find_packages(),
-    install_requires=['numpy >= 2.0.0', 'pandas >= 2.0.0', 'matplotlib >= 3.8.0'],
+    install_requires=['numpy >= 1.0.0', 'pandas >= 2.0.0', 'matplotlib >= 3.8.0'],
     extras_require={
         'torch': ['torch', 'pyyaml'],
     },
