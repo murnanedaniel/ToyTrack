@@ -28,6 +28,22 @@ toytrack.particle\_gun module
    :undoc-members:
    :show-inheritance:
 
+toytrack.dataloaders module
+------------------------
+
+.. automodule:: toytrack.dataloaders
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+toytrack.transforms module
+------------------------
+
+.. automodule:: toytrack.transforms
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 
