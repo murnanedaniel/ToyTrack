@@ -167,7 +167,11 @@ if HAS_TORCH:
                 if key == 'event':
                     collated[key] = [item[key] for item in batch]
                 else:
+                    print(key)
+                    print([item[key].shape for item in batch[:5]])
                     collated[key] = torch.nn.utils.rnn.pad_sequence([item[key] for item in batch], batch_first=True)
+
+                    print(collated[key].shape)
             return collated
 
 else:

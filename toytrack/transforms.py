@@ -61,9 +61,9 @@ class TrackletPatchify:
             sample['pids'] = sample['pids'].repeat_interleave(self.num_patches_per_track)
 
         # Get N^2 patch pair combinations as edge_index
-        sample['edge_index'] = torch.combinations(torch.arange(sample['x'].shape[0]), r=2).T
+        sample['edge_index'] = torch.combinations(torch.arange(sample['x'].shape[0]), r=2)
 
         # Get the y truth
-        sample['y'] = sample['pids'][sample['edge_index'][0]] == sample['pids'][sample['edge_index'][1]]
+        sample['y'] = sample['pids'][sample['edge_index'][..., 0]] == sample['pids'][sample['edge_index'][..., 1]]
 
         return sample
