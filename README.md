@@ -155,6 +155,8 @@ ToyTrack is designed to be fast. The following benchmarks were performed on a 64
 The `TracksDataset` class is a Pytorch dataset which can be used with a Pytorch dataloader. It can return either hitwise structure or trackwise structure.
 
 ```python
+from toytrack.dataloaders import TracksDataset
+
 config = {
     "detector": {
         "dimension": 2,
