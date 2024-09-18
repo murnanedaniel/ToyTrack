@@ -14,6 +14,36 @@ except ImportError:
 
 if HAS_TORCH:
     class TracksDataset(IterableDataset):
+        """An iterable dataset for generating toy tracking data.
+
+        This dataset generates events with particle tracks and detector hits based on the provided configuration.
+        It can output data in either a hitwise or trackwise structure.
+
+        Args:
+            config (Dict): A dictionary containing configuration parameters for the dataset.
+            transform (Optional[Callable]): An optional transform to apply to each generated sample.
+
+        Attributes:
+            config (Dict): The configuration dictionary.
+            detector (Detector): The detector object used for generating hits.
+            particle_guns (List[ParticleGun]): List of particle gun objects for generating particles.
+            event_generator (EventGenerator): The event generator object.
+            structure (str): The output structure, either 'hitwise' or 'trackwise'.
+            transform (Optional[Callable]): The transform to apply to each sample.
+
+        Example:
+            >>> config = {
+            ...     'detector': {'dimension': 2, 'min_radius': 0.5, 'max_radius': 3.0},
+            ...     'particle_guns': [{'num_particles': [1, 5], 'pt': [1, 5]}],
+            ...     'noise': 0.1,
+            ...     'structure': 'trackwise'
+            ... }
+            >>> dataset = TracksDataset(config)
+            >>> for sample in dataset:
+            ...     # Process the sample
+            ...     pass
+        """
+
         def __init__(self, config: Dict, transform: Optional[Callable] = None):
             self.config = config
             self.detector = self._create_detector()
