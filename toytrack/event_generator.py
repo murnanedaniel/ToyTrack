@@ -35,8 +35,11 @@ class Event:
     def __repr__(self):
         return f"Event(particles={self.particles}, hits={self.hits}), tracks={self.tracks}, detector={self.detector})"
 
-    def display(self):
-        fig, ax = plt.subplots()
+    def display(self, ax=None):
+        if ax is None:
+            fig, ax = plt.subplots()
+        else:
+            fig = ax.figure
 
         # Radii for the cylindrical layers
         radii = [layer["radius"] for layer in self.detector.layers if self.detector.dimension == 2 and layer["shape"] == "cylinder"]
@@ -68,7 +71,11 @@ class Event:
         ax.set_ylim(-max_radius-1, max_radius+1)
         ax.set_xlabel('x')
         ax.set_ylabel('y')
-        plt.show()
+        
+        if ax is None:
+            plt.show()
+        
+        return ax
 
 
 

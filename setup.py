@@ -6,7 +6,7 @@ with open('README.md', 'r') as f:
 
 setup(
     name='toytrack',
-    version='0.1.14',
+    version='0.1.15',
     url='https://github.com/murnanedaniel/ToyTrack',
     author='Daniel Murnane',
     author_email='daniel.thomas.murnane@cern.ch',

@@ -152,7 +152,7 @@ ToyTrack is designed to be fast. The following benchmarks were performed on a 64
 
 ## Pytorch Dataset
 
-The `TracksDataset` class is a Pytorch dataset which can be used with a Pytorch dataloader.
+The `TracksDataset` class is a Pytorch dataset which can be used with a Pytorch dataloader. It can return either hitwise structure or trackwise structure.
 
 ```python
 config = {
@@ -161,7 +161,7 @@ config = {
         "hole_inefficiency": 0,
         "min_radius": 0.5,
         "max_radius": 3.,
-        "number_of_layers": 10
+        "number_of_layers": 10,
     },
     "particle_guns": [
         {
@@ -172,21 +172,38 @@ config = {
             "vy": [-0.1, 0.1]
         }
     ],
-    "outputs": {
-        "x": True,
-        "mask": True,
-        "pids": True,
-        "event": True
-    }
+    "structure": "hitwise"
 }
 
 # initialize dataloader
 dataset = TracksDataset(config)
 
 # iterate over dataset
-for batch in dataset:
-    x, mask, pids, event = batch["x"], batch["mask"], batch["pids"], batch["event"]
-    # Do something with the batch!
+for sample in dataset:
+    x, mask, pids, event = sample["x"], sample["mask"], sample["pids"], sample["event"]
+    # x has shape (num_hits, num_features)
+```
+
+For trackwise structure:
+
+```python
+config = {
+    ... # as above
+    "detector": {
+        ... # as above
+        "layer_safety_guarantee": True # Must be True for trackwise structure
+        ... # as above
+    }
+    "structure": "trackwise"
+}
+
+# initialize dataloader
+dataset = TracksDataset(config)
+
+# iterate over dataset
+for sample in dataset:
+    x, mask, pids, event = sample["x"], sample["mask"], sample["pids"], sample["event"]
+    # x has shape (num_tracks, num_hits_per_track, num_features)
 ```
 
 ## Pytorch DataLoader
@@ -194,10 +211,33 @@ for batch in dataset:
 ```python
 from torch.utils.data import DataLoader
 
-dataloader = DataLoader(dataset, batch_size=100, collate_fn=collate_fn)
+dataloader = DataLoader(dataset, batch_size=100, collate_fn=dataset.collate_fn)
 
 # iterate over dataloader
 for batch in dataloader:
     x, mask, pids, event = batch["x"], batch["mask"], batch["pids"], batch["event"]
     # Do something with the batch (which now has an extra batch dimension of size 100)
 ```
+
+You can also get a straightforward parallelisation, with 
+```
+dataloader = DataLoader(dataset, batch_size=100, collate_fn=dataset.collate_fn, num_workers=16)
+```
+
+## Transformations
+
+You can apply transformations to the dataset by passing a list of transformations to the `TracksDataset` class. For example, to convert a trackwise dataset into patches of 3 hits each, you can do the following:
+
+```python
+from toytrack.transforms import TrackletPatchify
+
+transform = TrackletPatchify(num_patches_per_track=3)
+dataset = TracksDataset(config, transform=transform)
+
+# iterate over dataset
+for sample in dataset:
+    x, mask, pids, event = sample["x"], sample["mask"], sample["pids"], sample["event"]
+    # x has shape (num_tracks * num_patches_per_track, num_hits_per_patch, num_features)
+```
+
+![Example Event with Tracklet Patchify](https://raw.githubusercontent.com/murnanedaniel/ToyTrack/main/docs/imgs/example_event_tracklet_patches.png)

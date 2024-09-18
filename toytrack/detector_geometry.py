@@ -72,6 +72,8 @@ class Detector:
         If specified: If a float, then this is the inefficiency of each layer - i.e. the
         probability that a hit will not be recorded. If an int, then this is the number of
         holes that will be guaranteed per particle.
+    layer_safety_guarantee: bool
+        If True, then each particle is guaranteed to have exactly one hit per layer.
     """
 
     def __init__(self, dimension: int, hole_inefficiency: Union[int, float] = 0, layer_safety_guarantee: bool = False):
