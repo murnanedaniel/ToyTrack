@@ -74,12 +74,13 @@ class Detector:
         holes that will be guaranteed per particle.
     """
 
-    def __init__(self, dimension: int, hole_inefficiency: Union[int, float] = 0):
+    def __init__(self, dimension: int, hole_inefficiency: Union[int, float] = 0, layer_safety_guarantee: bool = False):
         """
         Initialize the Detector with the given parameters.
         """
         self.dimension = dimension
         self.hole_inefficiency = hole_inefficiency
+        self.layer_safety_guarantee = layer_safety_guarantee
         self.layers = []
 
     def add_from_template(self, template: str = None, **kwargs):
@@ -133,14 +134,18 @@ class Detector:
         """
         Generate a DataFrame of hits based on the given particles.
         """
+        if self.layer_safety_guarantee and self.hole_inefficiency > 0:
+            raise ValueError("Cannot have both layer safety guarantee and hole inefficiency.")
+
         # Generate the hits
         hits_df = self._generate_hits(particles)
 
-        # Generate holes
-        if self.hole_inefficiency > 0:
+        if self.layer_safety_guarantee:
+            hits_df, particles = self._apply_simple_layer_safety_guarantee(hits_df, particles)
+        elif self.hole_inefficiency > 0:
             hits_df = self._generate_holes(hits_df)
 
-        return hits_df
+        return hits_df, particles
 
     def generate_noise(self, hits_df: pd.DataFrame, num_noise: int) -> pd.DataFrame:
         """
@@ -333,6 +338,25 @@ class Detector:
         # Check if the angle falls within the delta_theta range
         df['valid1'] = ((lower_bound <= angle1) & (angle1 <= upper_bound)) | ((lower_bound <= angle1 + 2*np.pi) & (angle1 + 2*np.pi <= upper_bound))
         df['valid2'] = ((lower_bound <= angle2) & (angle2 <= upper_bound)) | ((lower_bound <= angle2 + 2*np.pi) & (angle2 + 2*np.pi <= upper_bound))
+
+    def _apply_simple_layer_safety_guarantee(self, hits_df: pd.DataFrame, particles: pd.DataFrame) -> pd.DataFrame:
+        """
+        Ensure that each particle has exactly one hit per layer by removing particles
+        that don't meet this criterion.
+        """
+        # Count the number of hits per particle
+        hits_per_particle = hits_df.groupby('particle_id').size()
+
+        # Identify particles with the correct number of hits
+        valid_particles = hits_per_particle[hits_per_particle == len(self.layers)].index
+
+        # Keep only hits from valid particles and noise hits
+        valid_hits = hits_df[hits_df['particle_id'].isin(valid_particles) | (hits_df['particle_id'] == -1)]
+
+        # Keep only valid particles
+        valid_particles_df = particles[particles.index.isin(valid_particles)]
+
+        return valid_hits.reset_index(drop=True), valid_particles_df
 
     def __repr__(self):
         return f"Detector(dimension={self.dimension}), layers: {self.layers}"

@@ -17,7 +17,7 @@ if HAS_TORCH:
             self.detector = self._create_detector()
             self.particle_guns = self._create_particle_guns()
             self.event_generator = self._create_event_generator()
-            self.outputs = config.get('outputs', {})
+            self.structure = config.get('structure', 'hitwise')
 
         def _create_detector(self) -> Detector:
             detector_config = self.config.get('detector', {})
@@ -54,23 +54,46 @@ if HAS_TORCH:
             )
 
         def __iter__(self) -> Iterator[Dict]:
+            """
+            This function generates events and yields them as dictionaries.
+            The structure of the output dictionary depends on the 'structure' parameter in the config.
+            If 'structure' is 'hitwise', then:
+            - 'x' is a tensor of shape (num_hits, 2) containing the x and y coordinates of the hits.
+            - 'mask' is a tensor of shape (num_hits,) containing the mask of the hits.
+            - 'pids' is a tensor of shape (num_hits,) containing the particle IDs of the hits.
+            - 'event' is the event object.
+
+            If 'structure' is 'trackletwise', then hits are grouped into tracklets:
+            - 'x' is a tensor of shape (num_tracklets, num_hits_max_per_tracklet, 2) containing the x and y coordinates of the hits.
+            - 'mask' is a tensor of shape (num_tracklets, num_hits_max_per_tracklet) containing the mask of the hits.
+            - 'pids' is a tensor of shape (num_tracklets, num_hits_max_per_tracklet) containing the particle IDs of the hits.
+            - 'event' is the event object.
+            """
+
             while True:
                 event = self.event_generator.generate_event()
                 output = {}
 
-                if self.outputs.get('x', False):
+                if self.structure == 'hitwise':
                     output['x'] = torch.tensor([event.hits.x, event.hits.y], dtype=torch.float).T.contiguous()
-
-                if self.outputs.get('mask', False):
                     output['mask'] = torch.ones(len(event.hits), dtype=torch.bool)
-
-                if self.outputs.get('pids', False):
                     output['pids'] = torch.tensor(event.hits.particle_id, dtype=torch.long)
+                    output['event'] = event
 
-                if self.outputs.get('event', False):
+                elif self.structure == 'trackletwise':
+                    tracklets_x, tracklets_mask, tracklets_pids = self.group_hits_into_tracklets(event)
+                    output['x'] = tracklets_x
+                    output['mask'] = tracklets_mask
+                    output['pids'] = tracklets_pids
                     output['event'] = event
 
                 yield output
+
+        def group_hits_into_tracklets(self, event: Event) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+            """
+            This function groups hits into tracklets.
+            """
+            pass
 
         @staticmethod
         def collate_fn(batch: List[Dict]) -> Dict:

@@ -109,6 +109,39 @@ event.display()
 
 ![Example Event with Multiple Particle Guns](https://raw.githubusercontent.com/murnanedaniel/ToyTrack/main/docs/imgs/example_event_multigun.png)
 
+## Detector with Layer Safety Guarantee
+
+We can ensure that each particle has exactly one hit per layer by setting the `layer_safety_guarantee` flag to `True`.
+
+Consider an event with low pT particles:
+
+```python
+particle_gun = ParticleGun(num_particles=[20, 5, 'normal'], pt=[1, 3], pphi=[-np.pi, np.pi], vx=[-0.1, 0.1], vy=[-0.1, 0.1])
+
+detector = Detector(dimension=2, layer_safety_guarantee=False).add_from_template('barrel', min_radius=0.5, max_radius=3, number_of_layers=10)
+
+event = EventGenerator(particle_gun, detector).generate_event()
+
+event.display()
+```
+
+![Example Event with Low pT Particles](https://raw.githubusercontent.com/murnanedaniel/ToyTrack/main/docs/imgs/example_event_lowpt.png)
+
+```python
+... # as above
+
+# Initialize a detector WITH layer safety guarantee
+detector = Detector(dimension=2, layer_safety_guarantee=True).add_from_template('barrel', min_radius=0.5, max_radius=3, number_of_layers=10)
+
+... # as above
+
+event.display()
+```
+
+![Example Event with Layer Safety Guarantee](https://raw.githubusercontent.com/murnanedaniel/ToyTrack/main/docs/imgs/example_event_lowpt_layer_safety.png)
+
+Observe that particles with such low pT that they "curled" before the final layer are now removed.
+
 # Performance
 
 ToyTrack is designed to be fast. The following benchmarks were performed on a 64-core AMD EPYC 7763 (Milan) CPU. 
@@ -119,7 +152,7 @@ ToyTrack is designed to be fast. The following benchmarks were performed on a 64
 
 ## Pytorch Dataset
 
-The `TracksDataset` class is a Pytorch dataset which can be use the generator with a Pytorch dataloader.
+The `TracksDataset` class is a Pytorch dataset which can be used with a Pytorch dataloader.
 
 ```python
 config = {

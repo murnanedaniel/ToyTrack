@@ -96,7 +96,7 @@ class EventGenerator:
     def __init__(self, 
                  particle_gun: Union[ParticleGun, List[ParticleGun]], 
                  detector: Detector, 
-                 noise: Union[float, List[float], List[Union[float, str]], int, List[int], List[Union[int, str]]] = None
+                 noise: Union[float, List[float], List[Union[float, str]], int, List[int], List[Union[int, str]]] = None,
                 ):
         """
         Initialize the EventGenerator with the given parameters.
@@ -114,7 +114,7 @@ class EventGenerator:
         particles["particle_id"] = particles.index
 
         # Generate the hits
-        hits = self.detector.generate_hits(particles)
+        hits, particles = self.detector.generate_hits(particles)
 
         # Add noise to the hits
         if self.noise is not None:
