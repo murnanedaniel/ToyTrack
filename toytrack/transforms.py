@@ -67,4 +67,8 @@ class TrackletPatchify:
         # Get the y truth
         sample['y'] = sample['pids'][sample['edge_index'][..., 0]] == sample['pids'][sample['edge_index'][..., 1]]
 
+        # Get true edge indices
+        sample['true_edge_index'] = sample['edge_index'][sample['y']]
+        sample['true_edge_mask'] = torch.ones(sample['true_edge_index'].shape[0], dtype=torch.bool)
+
         return sample

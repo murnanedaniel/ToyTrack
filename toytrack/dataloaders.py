@@ -21,7 +21,7 @@ if HAS_TORCH:
 
         Args:
             config (Dict): A dictionary containing configuration parameters for the dataset.
-            transform (Optional[Callable]): An optional transform to apply to each generated sample.
+            transforms (Optional[List[Callable]]): An optional list of transforms to apply to each generated sample.
 
         Attributes:
             config (Dict): The configuration dictionary.
@@ -29,7 +29,7 @@ if HAS_TORCH:
             particle_guns (List[ParticleGun]): List of particle gun objects for generating particles.
             event_generator (EventGenerator): The event generator object.
             structure (str): The output structure, either 'hitwise' or 'trackwise'.
-            transform (Optional[Callable]): The transform to apply to each sample.
+            transforms (Optional[List[Callable]]): The list of transforms to apply to each sample.
 
         Example:
             >>> config = {
@@ -44,13 +44,14 @@ if HAS_TORCH:
             ...     pass
         """
 
-        def __init__(self, config: Dict, transform: Optional[Callable] = None):
+        def __init__(self, config: Dict, transforms: Optional[Union[Callable, List[Callable]]] = None):
             self.config = config
             self.detector = self._create_detector()
             self.particle_guns = self._create_particle_guns()
             self.event_generator = self._create_event_generator()
             self.structure = config.get('structure', 'hitwise')
-            self.transform = transform
+            # Convert single transform to list if needed
+            self.transforms = [transforms] if isinstance(transforms, Callable) else transforms
 
         def _create_detector(self) -> Detector:
             detector_config = self.config.get('detector', {})
@@ -121,8 +122,9 @@ if HAS_TORCH:
                     output['pids'] = tracks_pids
                     output['event'] = event
 
-                if self.transform:
-                    output = self.transform(output)
+                if self.transforms:
+                    for transform in self.transforms:
+                        output = transform(output)
 
                 yield output
 
@@ -167,7 +169,14 @@ if HAS_TORCH:
                 if key == 'event':
                     collated[key] = [item[key] for item in batch]
                 else:
-                    collated[key] = torch.nn.utils.rnn.pad_sequence([item[key] for item in batch], batch_first=True)
+                    # Get first item to check dimensionality
+                    first_item = batch[0][key]
+                    if isinstance(first_item, torch.Tensor) and first_item.dim() == 0:
+                        # For scalar tensors, stack them
+                        collated[key] = torch.stack([item[key] for item in batch])
+                    else:
+                        # For tensors with dimensions, pad them
+                        collated[key] = torch.nn.utils.rnn.pad_sequence([item[key] for item in batch], batch_first=True)
             return collated
 
 else:
